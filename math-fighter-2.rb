@@ -98,20 +98,27 @@ class Game
   
 
   def player_block
+    @current_player.strike = 0
     puts "#{@current_target.name} blocks #{@current_player.name}'s attack"
     power_scale
   end
 
   def round_over
-    if @current_player.score > 2
-      puts "#{@current_player.name} wins"
-    elsif @current_player.score == 1 || @current_target.score == 1
-      puts "Round 3"
-      @current_player.score += 1
-    else
-      puts "Round 2"
-      @current_player.score += 1
-    end
+    @current_player.health > @current_target.health ? @current_player.score += 1 : @current_target.score +=1
+    display_life
+    if @current_player.score >= 2 || @current_target.score >= 2
+      puts "game over"
+      puts "Continue? y/n"
+      continue = gets.chomp
+      if continue == "y"
+        game=game.new
+      end
+      exit
+    elsif @current_player.score == 1 && @current_target.score == 1
+        puts "Round 3"
+      else
+        puts "Round 2"
+      end
     new_round
   end
 
@@ -121,6 +128,7 @@ class Game
     @players[1].health = 100
     next_level
   end
+
   def display_life
     puts "#{@players[0].name} : #{@players[0].health.round(0)} / #{@players[0].life}   Round Wins: #{@players[0].score} "
     puts "#{@players[1].name} : #{@players[1].health.round(0)} / #{@players[1].life}   Round Wins: #{@players[1].score} "
@@ -128,16 +136,16 @@ class Game
 
 
   def welcome
-  puts "++ ============================================= ++" 
-  puts "|                   Math Fighter 2                |"
-  puts "++ ============================================= ++"
+    puts "++ ============================================= ++" 
+    puts "|                   Math Fighter 2                |"
+    puts "++ ============================================= ++"
 
-  print "Player 1 enter your username: "
-  @players.push(Player.new(gets.chomp))
-  print "Player 2 enter your username: "
-  @players.push(Player.new(gets.chomp))
+    print "Player 1 enter your username: "
+    @players.push(Player.new(gets.chomp))
+    print "Player 2 enter your username: "
+    @players.push(Player.new(gets.chomp))
 
-  new_game
+    new_game
   end
 
   def time_left
