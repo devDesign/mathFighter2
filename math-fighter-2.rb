@@ -77,8 +77,9 @@ class Game
     end
   end
 
-  #the_question is increasing the random range by adding @level_counter to the mix
-  #player 2's question will be more difficult than player 1 this needs to be fixed 
+  #the_question(input) takes user input from attack menu  
+  #the_question(input) assigns @current_player.attack_mode_is and calls attack method
+  #needs to be cleaned up
   def the_question(attack)
     @current_player.attacks = @current_player.attack[attack-1]
     @attack_mode_is = @current_player.attacks
@@ -111,6 +112,7 @@ class Game
     end
   end
 
+  #displays @current_player attack methods
   def attack_select
     moves_count = @current_player.attack.size
     count = 1
