@@ -7,6 +7,7 @@ class Game
     @level_counter = 0
     @players = []
   end
+
   #creates player class objects by using @players.push 
   #@players[0] will have player1 object @players[1] will have player2 object
   #Player.new is taking user input as an argument 
@@ -28,6 +29,7 @@ class Game
     @players.push(Player.new(gets.chomp))
     new_game
   end
+
   #the current_player is Player1 current_target is Player2
   #they are being assigned in the wrong order to start with  
   def new_game
@@ -36,6 +38,7 @@ class Game
     @current_player = @players[1]
     next_level
   end
+
   #whos_turn() switches the players using @level_counter % 2 == 0 
   #@level_counter is used to increase difficulty aswell
   #the_question() is generating the users question using rand()
@@ -44,11 +47,11 @@ class Game
   def next_level
     whos_turn
     @level_counter += 1
-    the_question
     display_life if @level_counter % 2 != 0
     display_question
     player_attempt
   end
+
   #whos_turn() keeps track of whos turn it should be
   #constantly switching @current_player and @current_target after each turn
   #needs to be cleaned up
@@ -65,13 +68,28 @@ class Game
       @current_target_user = "P1"
     end
   end
+
   #the_question is increasing the random range by adding @level_counter to the mix
   #player 2's question will be more difficult than player 1 this needs to be fixed 
-  def the_question  
+  def the_question(attack)
+    #the_question SHOULD attack_select 
+    @current_player.attacks = @current_player.attack[attack-1]
     @random_number2 = rand(1 + @level_counter) 
     @random_number1 = rand(1 + @level_counter)
     @correct_answer = @random_number1 + @random_number2
   end
+
+  def attack_select
+    moves_count = @current_player.attack.size
+    count = 1
+    puts
+    puts "#{@current_player.name} Move List:"
+    moves_count.times do |n|
+      puts "#{count}. #{@current_player.attack[n]}"
+      count +=1
+    end
+  end
+
   #needs dynamic health bars
   #needs more street fighter 2 
   def display_life
@@ -79,19 +97,24 @@ class Game
       "         Time: #{@level_counter}         V: #{@players[1].score}      #{@players[1].health.round(0)} / #{@players[1].life}       #{@players[1].name} "
     puts "********                                   VS                                     ********" 
   end
+
   #the game waits for user to press enter so the #timer can start when player is ready
   def display_question
-  print "                            #{@current_player_user}. #{@current_player.name} press ENTER to attack"
-  gets.chomp
+  attack_select
+  print "                            #{@current_player_user}. #{@current_player.name} chose attack when ready: "
+  attack = gets.chomp.to_i
+  the_question(attack)
   print "                                       #{@random_number1} + #{@random_number2} = "
   player_attempt
   end
+
   #starting the timer right before the player_answer gets
   def player_attempt
   timer_start
   player_answer = gets.chomp.to_i
   is_correct(player_answer)
   end
+
   #if the player answers correct player_hit() is called
   #if the player is wrong player_block() is called
   def is_correct(player_answer)
@@ -102,14 +125,16 @@ class Game
       player_block
     end
   end
+
   #player_hit() asigns @current_player.strike using #strike() method
   #@current_player.strike is the damage 
   def player_hit
     @current_player.strike = strike
-    puts "#{@current_player.attack.sample} of #{@current_player.strike.round(0)} in #{timer} seconds.."
+    puts "#{@current_player.attacks} of #{@current_player.strike.round(0)} in #{timer} seconds.."
     power_scale
     next_level
   end
+
   #player_block() makes @current_player.strike harmless
   #users attack is blocked
   def player_block
@@ -117,18 +142,26 @@ class Game
     puts "#{@current_target.name} blocks #{@current_player.name}'s attack"
     power_scale
   end
-  #power_scale method is called ever round but...
+
+  #power_scale method is called every round but...
   #power_scale only runs after both players take a turn
   #calculate who takes damage by comparing results of @current_player and @current_targets strike 
   #if #health is 0 #round_over() is called 
+  #TODO:
+  #power_scale compares @current_player.attacks vs @current_target.attacks and apply Street Fighter logic
+  #ex jump vs fireball, fireball vs block ect..
   def power_scale
     if @level_counter % 2 == 0
+      puts
+
       if @current_target.strike > @current_player.strike
         @current_player.health -= @current_target.strike - @current_player.strike
         puts "#{@current_player.name} takes #{(@current_target.strike - @current_player.strike).round(0)} damage"
+        puts "*********************************"
       else
         @current_target.health -= @current_player.strike - @current_target.strike
         puts "#{@current_target.name} takes #{(@current_player.strike - @current_target.strike).round(0)} damage"
+        puts "*********************************"
       end
       if @current_target.health < 0 || @current_player.health < 0
         round_over
@@ -139,6 +172,7 @@ class Game
     end
     next_level
   end
+
   #ternary operator checks whos knocked out, gives a point to the winner.
   #if score is >=2 its game over
   #if score is 1-1 its round 3 
@@ -168,19 +202,22 @@ class Game
       end
     new_round
   end
+
   #new_round is called after #round_over 
-  #heals the players and turns back time 
+  #new_round() heals the players and turns back time 
   def new_round
     @level_counter = 0
     @players[0].health = 100
     @players[1].health = 100
     next_level
   end
-  #strike is used to calculate how powerful the attack will be
+
+  #strike() is called to calculate how powerful the attack will be
   #the perfect algoritm needs to be tweaked
   def strike
     100 / timer() 
   end
+
   #timer logic
   def timer
     time = @level_timer_end - @level_timer_start.round(2)
@@ -193,6 +230,7 @@ class Game
   def timer_end
     @level_timer_end = Time.now.round(2)
   end
+
   #SPECIAL MOVES (should be in player class?)
   ## fireball question logic to be added here
 
@@ -202,22 +240,37 @@ class Game
 
   ## imposible spining piledriver question here
 
+  ## spinning bird kick, flash kick 
+
+  ## sonic boom, rolling attack, sumo headbutt
+
 end
-#heres how player objects are created. 
-#connected to Game class using attr_accessor
+
+#player objects are created using Player class. 
+#bob = Player.new(1) will create:
+#bob.fighter = "Ryu"
+#bob.health = 100
+#bob.life = 100
+#bob.score = 0
+#bob.strike = 0
+#bob.attack = ["Hadoken","Shoryuken","Hurricane Kick"]
 class Player
-  attr_accessor :health,:score,:name,:life,:strike,:attack
-  def initialize(name, health = 100, score = 0, life =100)
+  #connected to Game class using attr_accessor
+  #pro-tip: attr_accessor :name will create @name in #initialize
+  attr_accessor :health,:score,:name,:life,:strike,:attack, :attacks
+  def initialize(input, health = 100, score = 0, life =100)
     @fighter = ""
     @health = health
     @life = life
     @score = score
     @strike = 0
-    @attack = fighter_select(name)
+    @attack = fighter_select(input)
+    @attacks = @attack
   end
-  #after #initialized is called @attack calls the #fighter_select method
-  #the user has already picked his character at game.welcome. 
-  #this function assigns it to his brand new player class
+
+  #@attack is created by Player.initialize
+  #@attack calls #fighter_select(input) method upon initialization
+  #fighter_select(input) assigns @attack and @name  
   def fighter_select(input)
     case input.to_i
       when 1
@@ -228,7 +281,7 @@ class Player
         @attack = ["Hadoken","Shoryuken","Hurricane Kick"]
       when 3
         @name = "E.Honda" 
-        @attack = ["Hundred Hand Slap","Sumo Headbutt","Sumo Smash"]
+        @attack = ["Hundred Hand Slap","Sumo Headbutt"]
       when 4
         @name = "Chun Li"
         @attack = ["Lightning Kick","Spinning Bird Kick"]
@@ -247,7 +300,7 @@ class Player
       else
         error
     end
-    @attack.push("Punch","Kick","Throw")
+    @attack.push("Punch","Kick","Throw","Block","Jump")
   end
   
   def error
