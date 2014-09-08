@@ -1,3 +1,4 @@
+require 'pry'
 #badass
 class Game
   def initialize()
@@ -6,6 +7,10 @@ class Game
     @correct_answer = 0
     @level_counter = 0
     @players = []
+    @attack_mode_is = ""
+    @last_level_champion = nil
+    @last_level_victim = nil
+    @winner_counter = 1
   end
 
   #creates player class objects by using @players.push 
@@ -36,6 +41,8 @@ class Game
     puts "                                   Round 1 - FIGHT"
     @current_target = @players[0]
     @current_player = @players[1]
+    @last_level_champion = @current_player
+    @last_level_victim = @current_target
     next_level
   end
 
@@ -56,7 +63,8 @@ class Game
   #constantly switching @current_player and @current_target after each turn
   #needs to be cleaned up
   def whos_turn
-    if @level_counter % 2 == 0 
+    @winner_counter += 1
+    if @winner_counter % 2 == 0  
       @current_player = @players[0]
       @current_target = @players[1]
       @current_player_user = "P1"
@@ -65,18 +73,42 @@ class Game
       @current_player = @players[1]
       @current_target = @players[0]
       @current_player_user = "P2"
-      @current_target_user = "P1"
+      @current_target_user = "P1" 
     end
   end
 
   #the_question is increasing the random range by adding @level_counter to the mix
   #player 2's question will be more difficult than player 1 this needs to be fixed 
   def the_question(attack)
-    #the_question SHOULD attack_select 
     @current_player.attacks = @current_player.attack[attack-1]
-    @random_number2 = rand(1 + @level_counter) 
-    @random_number1 = rand(1 + @level_counter)
-    @correct_answer = @random_number1 + @random_number2
+    @attack_mode_is = @current_player.attacks
+    
+    case attack_mode(@attack_mode_is)
+    when "fireball"
+      @current_player.attack_mode_is = "fireball"
+      fireball_attack
+    when "uppercut"
+      @current_player.attack_mode_is = "uppercut"
+      uppercut_attack
+    when "spam"
+      @current_player.attack_mode_is = "spam"
+      spam_attack
+    when "piledriver"
+      @current_player.attack_mode_is = "piledriver"
+      piledriver_attack
+    when "downup"
+      @current_player.attack_mode_is = "downup"
+      downup_attack
+    when "backforward"
+      @current_player.attack_mode_is = "backforward"
+      downforward_attack
+    when "punch"
+      @current_player.attack_mode_is = "punch"
+      punch_attack
+    when "kick"
+      @current_player.attack_mode_is = "kick"
+      kick_attack
+    end
   end
 
   def attack_select
@@ -90,12 +122,33 @@ class Game
     end
   end
 
+  def attack_mode(userinput)
+    case userinput
+    when "Hadoken", "Yoga Fire"
+       return "fireball"
+    when "Shoryuken", "Yoga Flame"
+      return "uppercut"
+    when "Hundred Hand Slap","Lightning Kick","Electric Thunder"
+      return "spam"
+    when "Spinning Bird Kick","Flash Kick"
+      return "downup"
+    when "Sumo Headbutt","Rolling Attack","Sonic Boom"
+      return "backforward"
+    when "Spinning Piledriver"
+      return "piledriver"
+    when "Punch"
+      return "punch"
+    when "Kick"
+      return "kick"
+    end
+  end
+
   #needs dynamic health bars
   #needs more street fighter 2 
   def display_life
     puts "#{@players[0].name}       #{@players[0].health.round(0)} / #{@players[0].life}      V: #{@players[0].score}" \
       "         Time: #{@level_counter}         V: #{@players[1].score}      #{@players[1].health.round(0)} / #{@players[1].life}       #{@players[1].name} "
-    puts "********                                   VS                                     ********" 
+    puts "******                                   VS                                     ******" 
   end
 
   #the game waits for user to press enter so the #timer can start when player is ready
@@ -104,14 +157,14 @@ class Game
   print "                            #{@current_player_user}. #{@current_player.name} chose attack when ready: "
   attack = gets.chomp.to_i
   the_question(attack)
-  print "                                       #{@random_number1} + #{@random_number2} = "
+  print "                                       #{@random_number1} #{@opperator} #{@random_number2} = "
   player_attempt
   end
 
   #starting the timer right before the player_answer gets
   def player_attempt
   timer_start
-  player_answer = gets.chomp.to_i
+  @current_player.attack_mode_is == "spam" ? player_answer = gets.chomp : player_answer = gets.chomp.to_i
   is_correct(player_answer)
   end
 
@@ -130,7 +183,7 @@ class Game
   #@current_player.strike is the damage 
   def player_hit
     @current_player.strike = strike
-    puts "#{@current_player.attacks} of #{@current_player.strike.round(0)} in #{timer} seconds.."
+    puts "                    #{@current_player.name} attacks with #{@current_player.attacks} of #{@current_player.strike.round(0)} in #{timer} seconds.."
     power_scale
     next_level
   end
@@ -139,7 +192,7 @@ class Game
   #users attack is blocked
   def player_block
     @current_player.strike = 0
-    puts "#{@current_target.name} blocks #{@current_player.name}'s attack"
+    puts "                           #{@current_target.name} blocks #{@current_player.name}'s attack"
     power_scale
   end
 
@@ -152,18 +205,17 @@ class Game
   #ex jump vs fireball, fireball vs block ect..
   def power_scale
     if @level_counter % 2 == 0
-      puts
-
       if @current_target.strike > @current_player.strike
         @current_player.health -= @current_target.strike - @current_player.strike
-        puts "#{@current_player.name} takes #{(@current_target.strike - @current_player.strike).round(0)} damage"
-        puts "*********************************"
+        puts "                                  #{@current_player.name} takes #{(@current_target.strike - @current_player.strike).round(0)} damage"
       else
         @current_target.health -= @current_player.strike - @current_target.strike
-        puts "#{@current_target.name} takes #{(@current_player.strike - @current_target.strike).round(0)} damage"
-        puts "*********************************"
+        puts "                                  #{@current_target.name} takes #{(@current_player.strike - @current_target.strike).round(0)} damage"
+        whos_turn
       end
       if @current_target.health < 0 || @current_player.health < 0
+        puts "                                           KO"
+        puts "                                         *******"
         round_over
       else
         next_level
@@ -191,14 +243,12 @@ class Game
       exit
     elsif @current_player.score == 1 && @current_target.score == 1
         puts 
+        puts "                                    ***** Round 3 ******"
         puts
-        puts "                *************************Round 3***************************"
-        puts puts
       else
         puts
+        puts "                                    ***** Round 2 ******"
         puts
-        puts "                *************************Round 2***************************"
-        puts puts
       end
     new_round
   end
@@ -213,9 +263,8 @@ class Game
   end
 
   #strike() is called to calculate how powerful the attack will be
-  #the perfect algoritm needs to be tweaked
   def strike
-    100 / timer() 
+    100 / timer() * @current_player_strike_mod
   end
 
   #timer logic
@@ -233,17 +282,82 @@ class Game
 
   #SPECIAL MOVES (should be in player class?)
   ## fireball question logic to be added here
+  def random_generator(start,stop)
+    rand(start..stop)+1
+  end
 
+  def fireball_attack
+    @random_number2 = random_generator(1,19)
+    @random_number1 = random_generator(1,19)
+    @opperator = "+"
+    @current_player_strike_mod = 1.4
+    @correct_answer = @random_number1 + @random_number2
+  end 
   ## uppercut question logic to be added here
-
+  def uppercut_attack
+    @random_number2 = random_generator(6,8)
+    @random_number1 = random_generator(6,8)
+    @opperator = "X"
+    @current_player_strike_mod = 1.6
+    @correct_answer = @random_number1 * @random_number2
+  end 
   ## lightning kick, hundread hand slap, electric thunder question logic added here
-
+  def spam_attack
+    @random_number2 = random_generator(1,4)
+    @random_number1 = random_generator(1,4)
+    @opperator = "+"
+    @current_player_strike_mod = 1.3
+    correct_number = @random_number1 + @random_number2
+    @correct_answer = ""
+    correct_number.times do |n|
+      @correct_answer += "p"      
+    end
+    @current_player_att
+    puts "Press the 'p' key this many times:"
+    puts @correct_answer.inspect
+  end 
   ## imposible spining piledriver question here
+  def piledriver_attack
 
+  end
   ## spinning bird kick, flash kick 
+  def downup_attack
 
+  end
   ## sonic boom, rolling attack, sumo headbutt
+  def backforward_attack
+  
+  end
+  ## pucnch attack
+  def punch_attack
+    @random_number1 = random_generator(1,9)
+    @random_number2 = random_generator(1,4)
+    @opperator = "+"
+    @current_player_strike_mod = 1
+    @correct_answer = @random_number1 + @random_number2
+  end
 
+  ## kick attack
+  def kick_attack
+    @random_number1 = random_generator(1,9)
+    @random_number2 = random_generator(1,4)
+    @opperator = "-"
+    @current_player_strike_mod = 1.2
+    @correct_answer = @random_number1 - @random_number2  
+  end
+
+  ## throw attack
+  def throw_attack
+
+  end
+  ## jump attack
+  def jump_attack
+
+  end
+  ## block attack
+  def block_attack
+
+  end
 end
 
 #player objects are created using Player class. 
@@ -257,7 +371,7 @@ end
 class Player
   #connected to Game class using attr_accessor
   #pro-tip: attr_accessor :name will create @name in #initialize
-  attr_accessor :health,:score,:name,:life,:strike,:attack, :attacks
+  attr_accessor :health,:score,:name,:life,:strike,:attack,:attacks, :attack_mode_is
   def initialize(input, health = 100, score = 0, life =100)
     @fighter = ""
     @health = health
@@ -266,6 +380,7 @@ class Player
     @strike = 0
     @attack = fighter_select(input)
     @attacks = @attack
+    @attack_mode_is = ""
   end
 
   #@attack is created by Player.initialize
@@ -293,7 +408,7 @@ class Player
         @attack = ["Spinning Piledriver"]
       when 7
         @name = "Guile"
-        @attack = ["Sonic Boom","Flash Kick"]
+        @attack = ["Sonic Boom", "Flash Kick"]
       when 8
         @name = "Dhalsim"
         @attack = ["Yoga Fire","Yoga Flame"]
